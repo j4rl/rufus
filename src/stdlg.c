@@ -1080,8 +1080,8 @@ static INT_PTR CALLBACK SelectionCallback(HWND hDlg, UINT message, WPARAM wParam
 		} else switch (LOWORD(wParam)) {
 		case IDOK:
 			// Produce a big scary warning if the silent install option was selected
-			if (selection_data[s].options->edition_index > 0 &&
-				Button_GetCheck(GetDlgItem(hDlg, IDC_SELECTION_CHOICE1 + selection_data[s].options->edition_index - 1))) {
+			hCtrl = GetDlgItem(hDlg, IDC_SELECTION_CHOICE1 + selection_data[s].options->edition_index - 1);
+			if (selection_data[s].options->edition_index > 0 &&	IsWindowVisible(hCtrl) && Button_GetCheck(hCtrl)) {
 				selection_dialog_options_t selection = { 0 };
 				selection.style = BS_AUTOCHECKBOX;
 				selection.flags = SELECTION_NEEDS_ALL_TO_PROCEED | SELECTION_USE_WARNING_ICON;
@@ -1095,7 +1095,8 @@ static INT_PTR CALLBACK SelectionCallback(HWND hDlg, UINT message, WPARAM wParam
 					break;
 			}
 			for (r = 0, i = 0, m = 1; i < nDialogItems; i++, m <<= 1)
-				if (Button_GetCheck(GetDlgItem(hDlg, IDC_SELECTION_CHOICE1 + i)) == BST_CHECKED)
+				if (Button_GetCheck(GetDlgItem(hDlg, IDC_SELECTION_CHOICE1 + i)) == BST_CHECKED &&
+					IsWindowVisible(GetDlgItem(hDlg, IDC_SELECTION_CHOICE1 + i)))
 					r += m;
 			if (selection_data[s].options->username_index > 0) {
 				GetWindowTextU(GetDlgItem(hDlg, IDC_SELECTION_USERNAME), unattend_username, MAX_USERNAME_LENGTH);

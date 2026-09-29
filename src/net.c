@@ -173,7 +173,7 @@ uint64_t DownloadToFileOrBufferEx(const char* url, const char* file, const char*
 	const char* accept_types[] = {"*/*\0", NULL};
 	const char* short_name;
 	unsigned char buf[DOWNLOAD_BUFFER_SIZE];
-	char hostname[64], urlpath[128], strsize[32];
+	char hostname[64], urlpath[128], strsize[32], *bak_file = NULL;
 	BOOL r = FALSE;
 	DWORD dwSize, dwWritten, dwDownloaded;
 	HANDLE hFile = INVALID_HANDLE_VALUE;
@@ -196,6 +196,13 @@ uint64_t DownloadToFileOrBufferEx(const char* url, const char* file, const char*
 	if (hProgressDialog != NULL) {
 		PrintInfo(5000, MSG_085, short_name);
 		uprintf("Downloading %s", url);
+	}
+
+	// If an old file with the same name exists, rename it so we can restore it in case of failure
+	if (file != NULL && PathFileExistsU((char*)file) && (bak_file = calloc(1, strlen(file) + 6)) != NULL) {
+		strcpy(bak_file, file);
+		strcat(bak_file, ".bak");
+		MoveFileU(file, bak_file);
 	}
 
 	if ( (!InternetCrackUrlA(url, (DWORD)safe_strlen(url), 0, &UrlParts))
@@ -327,8 +334,12 @@ out:
 	if (!r) {
 		if (file != NULL)
 			DeleteFileU(file);
+		if (bak_file != NULL)
+			MoveFileU(bak_file, file);
 		if (buffer != NULL)
 			safe_free(*buffer);
+	} else if (bak_file != NULL) {
+		DeleteFileU(bak_file);
 	}
 	if (hRequest)
 		InternetCloseHandle(hRequest);
@@ -496,7 +507,10 @@ static void CheckForDBXUpdates(int verbose)
 		vuprintf("DBX update timestamp is %" PRId64, timestamp);
 		static_sprintf(reg_name, "DBXTimestamp_%s", efi_archname[i + 1]);
 		// Check if we have an external DBX that is newer than embedded/last downloaded
-		if (timestamp <= MAX(dbx_info[i].timestamp, (uint64_t)ReadSetting64(reg_name)))
+		if (timestamp <= dbx_info[i].timestamp)
+			continue;
+		static_sprintf(path, "%s\\%s\\dbx_%s.bin", app_data_dir, FILES_DIR, efi_archname[i + 1]);
+		if (PathFileExistsU(path) && timestamp <= (uint64_t)ReadSetting64(reg_name))
 			continue;
 		if (!already_prompted) {
 			r = Notification(MB_YESNO | MB_ICONWARNING, lmprintf(MSG_353), lmprintf(MSG_354));
@@ -507,7 +521,6 @@ static void CheckForDBXUpdates(int verbose)
 			IGNORE_RETVAL(_mkdir(FILES_DIR));
 			IGNORE_RETVAL(_chdir(FILES_DIR));
 		}
-		static_sprintf(path, "%s\\%s\\dbx_%s.bin", app_data_dir, FILES_DIR, efi_archname[i + 1]);
 		if (DownloadToFileOrBuffer(dbx_info[i].url, path, NULL, NULL, FALSE) != 0) {
 			WriteSetting64(reg_name, timestamp);
 			uprintf("Saved %s as 'dbx_%s.bin'", dbx_info[i].url, efi_archname[i + 1]);

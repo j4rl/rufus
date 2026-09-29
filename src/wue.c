@@ -150,7 +150,7 @@ char* CreateUnattendXml(int arch, int flags)
 		fprintf(fd, "        </ProductKey>\n");
 		fprintf(fd, "      </UserData>\n");
 		if (flags & UNATTEND_SILENT_INSTALL) {
-			uprintf("• Silent Install");
+			uprintf("• ⚠Silent Install⚠");
 			// Automatically partition the disk and set the installation target
 			fprintf(fd, "      <DiskConfiguration>\n");
 			fprintf(fd, "        <WillShowUI>OnError</WillShowUI>\n");
