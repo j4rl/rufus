@@ -47,6 +47,7 @@
 #include "localization.h"
 
 #include "ui.h"
+#include "winui.h"
 #include "vhd.h"
 #include "wue.h"
 #include "drive.h"
@@ -2940,6 +2941,7 @@ static INT_PTR CALLBACK MainCallback(HWND hDlg, UINT message, WPARAM wParam, LPA
 		return (INT_PTR)GetSysColorBrush(COLOR_BTNFACE);
 
 	case WM_DESTROY:
+		WinUIDestroy();
 		safe_destroy_imagelist_from_toolbar(hSaveToolbar);
 		safe_destroy_imagelist_from_toolbar(hHashToolbar);
 		safe_destroy_imagelist_from_toolbar(hMultiToolbar);
@@ -3882,6 +3884,13 @@ relaunch:
 			MB_OK | MB_ICONERROR | MB_IS_RTL | MB_SYSTEMMODAL, selected_langid);
 		goto out;
 	}
+	// Keep the native controls as the backend state and command bridge for WinUI.
+	if (!WinUIInitialize(hDlg)) {
+		MessageBoxW(hDlg, WinUIErrorMessage(), L"Rufus - WinUI 3", MB_OK | MB_ICONERROR);
+		DestroyWindow(hDlg);
+		hDlg = NULL;
+		goto out;
+	}
 	if ((relaunch_rc.left > -65536) && (relaunch_rc.top > -65536))
 		SetWindowPos(hDlg, HWND_TOP, relaunch_rc.left, relaunch_rc.top, 0, 0, SWP_NOSIZE);
 
@@ -4272,8 +4281,10 @@ extern int TestHashes(void);
 			alt_command = FALSE;
 		}
 
-		// Let the system handle dialog messages (e.g. those from the tab key)
-		if (!IsDialogMessage(hDlg, &msg) && !IsDialogMessage(hLogDialog, &msg)) {
+		// WinUI owns keyboard navigation inside its island. Preserve native log navigation.
+		if (WinUIPreTranslateMessage(&msg))
+			continue;
+		if ((WinUIIsActive() || !IsDialogMessage(hDlg, &msg)) && !IsDialogMessage(hLogDialog, &msg)) {
 			TranslateMessage(&msg);
 			DispatchMessage(&msg);
 		}
@@ -4287,6 +4298,12 @@ extern int TestHashes(void);
 	}
 
 out:
+	// WM_CLOSE can end the message loop without destroying the main window.
+	if (WinUIIsActive() && IsWindow(hDlg)) {
+		DestroyWindow(hDlg);
+		hDlg = NULL;
+	}
+	WinUIShutdown();
 	_chdirU(cur_dir);
 	// Destroy the hogger mutex first, so that the cmdline app can exit and we can delete it
 	if (hogmutex != NULL) {

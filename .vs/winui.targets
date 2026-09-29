@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <!-- Code-only XAML uses a normal C++/WinRT projection. No app packaging,
+       generated WinMain or startup initializer is allowed in this C host. -->
+  <Target Name="CheckWinUIDependencies" BeforeTargets="PrepareForBuild">
+    <Error Condition="!Exists('$(WinUICppWinRT)\bin\cppwinrt.exe') Or !Exists('$(WinUIControls)\metadata\Microsoft.UI.Xaml.winmd') Or !Exists('$(WinUIInteractive)\metadata\10.0.18362.0\Microsoft.UI.winmd') Or !Exists('$(WinUIFoundation)\metadata\Microsoft.Windows.ApplicationModel.Resources.winmd') Or !Exists('$(WinUIRuntime)\include\WindowsAppSDK-VersionInfo.h') Or !Exists('$(WinUIWebView)\lib\Microsoft.Web.WebView2.Core.winmd') Or !Exists('$(WinUIBootstrap)')"
+           Text="WinUI dependencies are missing. From the repository root run: nuget restore .vs\packages.config -PackagesDirectory packages. Use /p:UseWinUI=false for the legacy Win32 build." />
+  </Target>
+  <ItemGroup>
+    <WinUIMetadata Include="$(WinUIControls)\metadata\*.winmd;$(WinUIInteractive)\metadata\10.0.18362.0\*.winmd;$(WinUIFoundation)\metadata\*.winmd;$(WinUIWebView)\lib\Microsoft.Web.WebView2.Core.winmd" />
+  </ItemGroup>
+  <Target Name="GenerateWinUIProjection" BeforeTargets="ClCompile" DependsOnTargets="CheckWinUIDependencies"
+          Inputs="@(WinUIMetadata);$(WinUICppWinRT)\bin\cppwinrt.exe;$(MSBuildThisFileDirectory)winui.props;$(MSBuildThisFileFullPath)"
+          Outputs="$(WinUIProjectionDir)\projection-$(WindowsTargetPlatformVersion).stamp">
+    <MakeDir Directories="$(WinUIProjectionDir)" />
+    <Exec Command="&quot;$(WinUICppWinRT)\bin\cppwinrt.exe&quot; -input $(WindowsTargetPlatformVersion) -input &quot;$(WinUIControls)\metadata&quot; -input &quot;$(WinUIInteractive)\metadata\10.0.18362.0&quot; -input &quot;$(WinUIFoundation)\metadata&quot; -input &quot;$(WinUIWebView)\lib\Microsoft.Web.WebView2.Core.winmd&quot; -output &quot;$(WinUIProjectionDir)&quot;" />
+    <Touch Files="$(WinUIProjectionDir)\projection-$(WindowsTargetPlatformVersion).stamp" AlwaysCreate="true" />
+    <ItemGroup>
+      <FileWrites Include="$(WinUIProjectionDir)\**\*" />
+    </ItemGroup>
+  </Target>
+  <Target Name="CopyWinUIBootstrap" AfterTargets="Link">
+    <Copy SourceFiles="$(WinUIBootstrap)" DestinationFolder="$(OutDir)" SkipUnchangedFiles="true" />
+    <ItemGroup>
+      <FileWrites Include="$(OutDir)Microsoft.WindowsAppRuntime.Bootstrap.dll" />
+    </ItemGroup>
+  </Target>
+</Project>

@@ -32,14 +32,15 @@ Features
 * Download official Microsoft Windows 8, Windows 10 or Windows 11 retail ISOs
 * Download [UEFI Shell](https://github.com/pbatard/UEFI-Shell) ISOs
 * Modern and familiar UI, with [38 languages natively supported](https://github.com/pbatard/rufus/wiki/FAQ#What_languages_are_natively_supported_by_Rufus)
-* Small footprint. No installation required.
+* Portable application files (WinUI builds require the Windows App Runtime).
 * Portable. Secure Boot compatible.
 * 100% [Free Software](https://www.gnu.org/philosophy/free-sw) ([GPL v3](https://www.gnu.org/licenses/gpl-3.0))
 
 Compilation
 -----------
 
-Use either Visual Studio 2026 or MinGW and then invoke the `.sln` or `configure`/`make` respectively.
+Visual Studio 2026 builds use WinUI 3 for the main window. MinGW's
+`configure`/`make` build continues to use the legacy Win32 interface.
 
 #### Visual Studio
 
@@ -47,6 +48,40 @@ Rufus is an OSI compliant Open Source project. You are entitled to
 download and use the *freely available* [Visual Studio Community Edition](https://www.visualstudio.com/vs/community/)
 to build, run or develop for Rufus. As per the Visual Studio Community Edition license,
 this applies regardless of whether you are an individual or a corporate user.
+
+Install the Desktop development with C++ workload (v145), a Windows 10/11 SDK
+(10.0.19041.0 or newer), and the [NuGet CLI](https://www.nuget.org/downloads).
+From a developer command prompt in this directory:
+
+```bat
+nuget restore .vs\packages.config -PackagesDirectory packages
+msbuild rufus.sln /m /p:Configuration=Release /p:Platform=x64
+```
+
+The solution also supports `x86` and `arm64`. Open `rufus.sln` after restoring
+the packages to build or debug in Visual Studio. To build the original native
+interface with no WinUI dependencies, pass `/p:UseWinUI=false` to MSBuild.
+
+The WinUI build targets Windows 10 version 1809 or later and uses the native
+components of **Windows App SDK 2.5.1**. Install the matching architecture of
+the [Windows App Runtime 2.5.1 or newer 2.x runtime](https://learn.microsoft.com/windows/apps/windows-app-sdk/downloads).
+Distribute `rufus.exe` **together with** `Microsoft.WindowsAppRuntime.Bootstrap.dll`
+from the build output directory. Copying only the executable is insufficient.
+The runtime is initialized explicitly after Rufus configures its DLL search
+policy; a missing runtime produces an error instead of silently switching UI.
+
+`src/winui.cpp` hosts a [WinUI 3 XAML Island](https://learn.microsoft.com/windows/apps/desktop/modernize/host-controls-existing-desktop-apps)
+in the existing main window. Its controls use the existing localized strings,
+device enumeration, validation, formatting and cancellation handlers. The
+native controls remain as the state bridge, with their drawing regions hidden.
+Log, settings, file pickers and confirmation dialogs still use the existing
+native implementations. This is a migration of the main window; auxiliary
+dialogs have not yet been converted to WinUI.
+
+The WinUI view is written in C++/WinRT without compiled XAML. The build generates
+the required projections from the pinned NuGet metadata and copies the runtime
+bootstrap DLL. `Makefile.in` is generated for the MinGW build and does not
+configure WinUI.
 
 Additional information
 ----------------------

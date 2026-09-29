@@ -52,6 +52,7 @@ Makefile
 /arm64
 /x64
 /x86
+/packages
 autom4te.cache
 config.guess
 /config.h

@@ -41,6 +41,7 @@
 #include "localization.h"
 
 #include "ui.h"
+#include "winui.h"
 #include "ui_data.h"
 
 UINT_PTR UM_LANGUAGE_MENU_MAX = UM_LANGUAGE_MENU;
@@ -494,11 +495,13 @@ static void ResizeDialogs(int shift)
 	RECT rc;
 	POINT point;
 
-	// Resize the main dialog
-	GetWindowRect(hMainDialog, &rc);
-	point.x = (rc.right - rc.left);
-	point.y = (rc.bottom - rc.top);
-	MoveWindow(hMainDialog, rc.left, rc.top, point.x, point.y + shift, TRUE);
+	// WinUI arranges its own content without changing the host window size.
+	if (!WinUIIsActive()) {
+		GetWindowRect(hMainDialog, &rc);
+		point.x = (rc.right - rc.left);
+		point.y = (rc.bottom - rc.top);
+		MoveWindow(hMainDialog, rc.left, rc.top, point.x, point.y + shift, TRUE);
+	}
 
 	// Resize the log
 	GetWindowRect(hLogDialog, &rc);
@@ -909,6 +912,7 @@ static INT_PTR CALLBACK ProgressCallback(HWND hCtrl, UINT message, WPARAM wParam
 	switch (message) {
 
 	case PBM_SETSTATE:
+		WinUISetProgressState((int)wParam);
 		switch (wParam) {
 		case PBST_NORMAL:
 			color = PROGRESS_BAR_NORMAL_COLOR;
@@ -937,6 +941,7 @@ static INT_PTR CALLBACK ProgressCallback(HWND hCtrl, UINT message, WPARAM wParam
 		return (INT_PTR)TRUE;
 
 	case PBM_SETMARQUEE:
+		WinUISetProgressMarquee((BOOL)wParam);
 		CallWindowProc(progress_original_proc, hCtrl, message, wParam, lParam);
 		if ((wParam == TRUE) && (!marquee_mode)) {
 			marquee_mode = TRUE;

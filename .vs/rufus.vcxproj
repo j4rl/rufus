@@ -31,6 +31,7 @@
     <ProjectGuid>{731858A7-0303-4988-877B-9C0DD6471864}</ProjectGuid>
     <RootNamespace>rufus</RootNamespace>
     <Keyword>Win32Proj</Keyword>
+    <UseWinUI Condition="'$(UseWinUI)'==''">true</UseWinUI>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
@@ -291,6 +292,7 @@
       <Message>Generating 'embedded.loc' file</Message>
     </PreBuildEvent>
   </ItemDefinitionGroup>
+  <Import Project="winui.props" Condition="'$(UseWinUI)'=='true'" />
   <ItemGroup>
     <ClCompile Include="..\src\badblocks.c" />
     <ClCompile Include="..\src\cregex_compile.c" />
@@ -356,6 +358,7 @@
     <ClInclude Include="..\src\smart.h" />
     <ClInclude Include="..\src\dev.h" />
     <ClInclude Include="..\src\ui.h" />
+    <ClInclude Include="..\src\winui.h" />
     <ClInclude Include="..\src\ui_data.h" />
     <ClInclude Include="..\src\vhd.h" />
     <ClInclude Include="..\src\winio.h" />
@@ -369,6 +372,9 @@
     <None Include="..\res\down.ico" />
     <None Include="..\res\rufus.ico" />
     <None Include="..\res\up.ico" />
+    <None Include="packages.config" />
+    <None Include="winui.props" />
+    <None Include="winui.targets" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="..\src\rufus.rc" />
@@ -409,6 +415,7 @@
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <Import Project="winui.targets" Condition="'$(UseWinUI)'=='true'" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
 </Project>

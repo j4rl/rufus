@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <WinUIPackagesDir Condition="'$(WinUIPackagesDir)'==''">$(MSBuildThisFileDirectory)..\packages\</WinUIPackagesDir>
+    <WinUIProjectionDir>$(IntDir)winui-generated</WinUIProjectionDir>
+    <WinUICppWinRT>$(WinUIPackagesDir)Microsoft.Windows.CppWinRT.3.0.260818.1</WinUICppWinRT>
+    <WinUIRuntime>$(WinUIPackagesDir)Microsoft.WindowsAppSDK.Runtime.2.5.1</WinUIRuntime>
+    <WinUIFoundation>$(WinUIPackagesDir)Microsoft.WindowsAppSDK.Foundation.2.3.12</WinUIFoundation>
+    <WinUIInteractive>$(WinUIPackagesDir)Microsoft.WindowsAppSDK.InteractiveExperiences.2.1.9</WinUIInteractive>
+    <WinUIControls>$(WinUIPackagesDir)Microsoft.WindowsAppSDK.WinUI.2.3.9</WinUIControls>
+    <WinUIWebView>$(WinUIPackagesDir)Microsoft.Web.WebView2.1.0.3719.77</WinUIWebView>
+    <WinUIArchitecture>$(Platform)</WinUIArchitecture>
+    <WinUIArchitecture Condition="'$(Platform)'=='Win32'">x86</WinUIArchitecture>
+    <WinUIArchitecture Condition="'$(Platform)'=='ARM64'">arm64</WinUIArchitecture>
+    <WinUIBootstrap>$(WinUIFoundation)\runtimes\win-$(WinUIArchitecture)\native\Microsoft.WindowsAppRuntime.Bootstrap.dll</WinUIBootstrap>
+  </PropertyGroup>
+  <ItemDefinitionGroup>
+    <ClCompile>
+      <PreprocessorDefinitions>RUFUS_WINUI;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+    </ClCompile>
+    <Link>
+      <AdditionalDependencies>windowsapp.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="..\src\winui.cpp">
+      <CompileAs>CompileAsCpp</CompileAs>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+      <ExceptionHandling>Sync</ExceptionHandling>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <!-- The engine's C-only compatibility macros and headers must not leak into C++/WinRT. -->
+      <PreprocessorDefinitions>RUFUS_WINUI;UNICODE;_UNICODE;_WIN32_WINNT=0x0A00</PreprocessorDefinitions>
+      <AdditionalIncludeDirectories>$(WinUIProjectionDir);$(WinUIInteractive)\include;$(WinUIFoundation)\include;$(WinUIRuntime)\include</AdditionalIncludeDirectories>
+      <AdditionalOptions>/utf-8 /permissive-</AdditionalOptions>
+    </ClCompile>
+  </ItemGroup>
+</Project>
